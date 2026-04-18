@@ -8,7 +8,7 @@ import { Order } from './order.entity';
   imports: [
   TypeOrmModule.forRoot({
   type: 'postgres',
-  host: 'localhost',
+  host: process.env.DB_HOST || 'localhost',
   port: 5432,
   username: 'postgres',
   password: '12345',
