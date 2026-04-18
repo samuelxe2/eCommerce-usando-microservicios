@@ -9,6 +9,6 @@ export class ProductsController {
 
   @Get()
   getProducts() {
-    return this.client.send({ cmd: 'get_products' }, {});
+    return this.client.send({ cmd:'get_products'}, {});
   }
 }
