@@ -1,36 +1,34 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-
-type Order = {
-  id: number;
-  userId: number;
-  products: number[];
-};
-
-let orders: Order[] = [];
-let idCounter = 1;
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Order } from './order.entity';
 
 @Controller()
 export class AppController {
 
+  constructor(
+    @InjectRepository(Order)
+    private orderRepo: Repository<Order>,
+  ) {}
+//aqui se crea el pedido
   @MessagePattern({ cmd: 'create_order' })
-  createOrder(data: any) {
-    const order: Order = {
-      id: idCounter++,
-      ...data,
-    };
-    orders.push(order);
-    return order;
+  async createOrder(data: any) {
+    const order = this.orderRepo.create(data);
+    return await this.orderRepo.save(order);
   }
 
+  //aqui se obtiene el pedido por ID
   @MessagePattern({ cmd: 'get_order' })
-  getOrder(id: number) {
-    return orders.find(o => o.id == id);
+  async getOrder(id: any) {
+    return await this.orderRepo.findOneBy({ id: Number(id) });
   }
 
+  //aqui se elimina el pedido por 
   @MessagePattern({ cmd: 'delete_order' })
-  deleteOrder(id: number) {
-    orders = orders.filter(o => o.id != id);
+  async deleteOrder(id: any) {
+    await this.orderRepo.delete(Number(id));
     return { message: 'Pedido eliminado' };
   }
+
 }
