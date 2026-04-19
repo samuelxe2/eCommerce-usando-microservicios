@@ -10,45 +10,87 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecommerce-network
 
   users-service:
     build: ./users-service
+    container_name: users_service
     ports:
       - "3001:3001"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: 12345
+      DB_DATABASE: user_db
+    networks:
+      - ecommerce-network
 
   products-service:
     build: ./products-service
+    container_name: products_service
     ports:
       - "3002:3002"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: 12345
+      DB_DATABASE: products_db
+    networks:
+      - ecommerce-network
 
   orders-service:
     build: ./orders-service
+    container_name: orders_service
     ports:
       - "3003:3003"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: 12345
+      DB_DATABASE: orders_db
+    networks:
+      - ecommerce-network
 
   api-gateway:
     build: ./api-gateway
+    container_name: api_gateway
     ports:
       - "3000:3000"
     depends_on:
-      - users-service
-      - products-service
-      - orders-service
+      users-service:
+        condition: service_started
+      products-service:
+        condition: service_started
+      orders-service:
+        condition: service_started
+    networks:
+      - ecommerce-network
 
 volumes:
   postgres_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge
